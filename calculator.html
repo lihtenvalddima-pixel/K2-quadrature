@@ -3,212 +3,430 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Калькулятор площади — К2</title>
-<meta name="description" content="Расчёт площади стен и пола по комнатам с вычетом проёмов и запасом на подрезку.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%232563eb'/><rect x='6' y='6' width='20' height='20' rx='3' fill='none' stroke='white' stroke-width='2.4'/><line x1='5' y1='27' x2='27' y2='5' stroke='%23f59e0b' stroke-width='2.6' stroke-linecap='round'/></svg>">
-<link rel="stylesheet" href="style.css">
+<title>Калькулятор К2 — расчёт площади стен и пола с вычетом проёмов</title>
+<meta name="description" content="Расчёт площади стен и пола по комнатам с вычетом окон и дверей, запасом на подрезку, экспортом в CSV и печатью в PDF.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231e3a8a'/><rect x='12' y='12' width='40' height='40' rx='6' fill='none' stroke='white' stroke-width='4'/><line x1='12' y1='52' x2='52' y2='12' stroke='white' stroke-width='4'/><text x='32' y='40' font-family='Arial' font-size='16' font-weight='bold' fill='%23fbbf24' text-anchor='middle'>K2</text></svg>">
+<style>
+    :root {
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --navy: #1e3a8a;
+        --navy-deep: #172554;
+        --accent: #fbbf24;
+        --success: #16a34a;
+        --danger: #ef4444;
+        --bg: #f1f5f9;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.55;
+    }
+    .topbar {
+        background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 100%);
+        color: #fff;
+        padding: 14px 20px;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        box-shadow: 0 2px 12px rgba(23, 37, 84, 0.35);
+    }
+    .topbar-inner {
+        max-width: 1000px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 1.15rem;
+        color: #fff;
+        text-decoration: none;
+    }
+    .logo-badge {
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 10px;
+        padding: 4px 10px;
+        color: var(--accent);
+        font-weight: 800;
+        letter-spacing: 0.5px;
+    }
+    .topnav { display: flex; gap: 6px; flex-wrap: wrap; }
+    .topnav a {
+        color: rgba(255,255,255,0.85);
+        text-decoration: none;
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        transition: 0.15s;
+    }
+    .topnav a:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .topnav a.active { background: rgba(255,255,255,0.18); color: var(--accent); }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 24px 16px 40px; }
+
+    h1 { font-size: 1.6rem; margin: 0 0 4px; }
+    h2 { font-size: 1.25rem; margin-bottom: 10px; }
+    .subtitle { color: var(--muted); font-size: 0.92rem; }
+
+    .card {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+        margin-bottom: 18px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 10px;
+        padding: 11px 18px;
+        font-size: 0.92rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: 0.15s;
+        text-decoration: none;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #15803d; }
+    .btn-outline { background: #fff; color: var(--text); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+    footer.site-footer {
+        background: var(--navy-deep);
+        color: rgba(255,255,255,0.65);
+        text-align: center;
+        padding: 22px 16px;
+        font-size: 0.85rem;
+        margin-top: 20px;
+    }
+    @media print {
+        .topbar, .site-footer, .no-print { display: none !important; }
+        body { background: #fff; }
+        .card { box-shadow: none; border: 1px solid #cbd5e1; break-inside: avoid; }
+    }
+
+    .page-head { margin-bottom: 18px; }
+    .reserve-line { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .reserve-line label { color: var(--muted); font-size: 0.92rem; }
+    .reserve-control input { width: 70px; text-align: center; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; }
+    .reserve-control b { color: var(--muted); }
+
+    .room-card { border-top: 4px solid var(--primary); }
+    .room-header {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+    .room-name {
+        font-size: 1.05rem; font-weight: 700; border: 1px solid transparent;
+        background: #f8fafc; padding: 6px 10px; border-radius: 8px; width: 240px; max-width: 60%;
+    }
+    .room-name:focus { border-color: var(--primary); background: #fff; outline: none; }
+
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+    .field label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    input[type="number"], input[type="text"], select {
+        width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+        font-size: 0.95rem; outline: none; background: #fff;
+    }
+    input:focus, select:focus { border-color: var(--primary); }
+
+    .openings-bar {
+        display: flex; justify-content: space-between; align-items: center;
+        margin: 10px 0 8px; font-size: 0.85rem; font-weight: 700; color: var(--muted);
+    }
+    .btn-sm {
+        background: #eff6ff; color: var(--primary); border: 1px solid #bfdbfe;
+        padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    }
+    .btn-sm:hover { background: #dbeafe; }
+    .opening-row {
+        display: grid; grid-template-columns: 1.2fr 1fr 1fr 0.6fr 34px;
+        gap: 8px; align-items: center; margin-bottom: 6px;
+        background: #f8fafc; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--border);
+    }
+    .btn-del {
+        background: #fef2f2; border: 1px solid #fecaca; color: var(--danger);
+        border-radius: 6px; font-size: 1rem; font-weight: 700; cursor: pointer; padding: 5px 9px;
+    }
+    .btn-del-room {
+        background: #fef2f2; color: var(--danger); border: 1px solid #fecaca;
+        padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+        white-space: nowrap;
+    }
+    .btn-del-room:hover { background: #fee2e2; }
+
+    .room-subtotal {
+        margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);
+        display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+        font-size: 0.86rem; color: var(--muted);
+    }
+    .room-subtotal strong { color: var(--text); }
+
+    .add-row { margin: 18px 0; text-align: center; }
+
+    .summary-card {
+        background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 100%);
+        color: #fff; border-radius: 16px; padding: 24px; margin-top: 24px;
+    }
+    .summary-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 16px; color: var(--accent); }
+    .sum-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+    .sum-item {
+        background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+        padding: 14px 16px; border-radius: 12px;
+    }
+    .sum-item span { display: block; font-size: 0.8rem; color: rgba(255,255,255,0.7); }
+    .sum-item strong { display: block; font-size: 1.3rem; margin-top: 4px; }
+    .sum-item.highlight { background: rgba(255,255,255,0.14); border-color: rgba(251,191,36,0.4); }
+    .sum-item.highlight strong { color: var(--accent); }
+    .mini { margin-top: 6px; font-size: 0.78rem; }
+    .mini b { color: var(--accent); }
+
+    .download-bar { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    @media (max-width: 640px) {
+        .grid-4 { grid-template-columns: repeat(2, 1fr); }
+        .sum-grid { grid-template-columns: 1fr; }
+        .opening-row { grid-template-columns: 1fr 1fr; }
+        .room-name { max-width: 100%; width: 100%; }
+        .room-header { flex-direction: column; align-items: stretch; }
+    }
+</style>
 </head>
 <body>
 
 <header class="topbar">
-  <div class="logo">
-    <svg width="30" height="30" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#fff"/><rect x="6" y="6" width="20" height="20" rx="3" fill="none" stroke="#2563eb" stroke-width="2.4"/><line x1="5" y1="27" x2="27" y2="5" stroke="#f59e0b" stroke-width="2.6" stroke-linecap="round"/><text x="17" y="14" font-size="8" font-weight="800" fill="#1d4ed8" font-family="system-ui">К2</text></svg>
-    К2 · Площадь
+  <div class="topbar-inner">
+    <a class="logo" href="index.html"><span class="logo-badge">K2</span> Калькулятор площади</a>
+    <nav class="topnav">
+      <a href="index.html">Главная</a>
+      <a href="calculator.html" class="active">Калькулятор</a>
+      <a href="guide.html">Справка</a>
+    </nav>
   </div>
-  <nav>
-    <a href="index.html" class="">Главная</a>
-    <a href="calculator.html" class="active">Калькулятор</a>
-    <a href="guide.html" class="">Справка</a>
-  </nav>
 </header>
 
+
 <div class="container">
+    <div class="page-head">
+        <h1>Калькулятор площади</h1>
+        <p class="subtitle">Стены и пол по комнатам, вычет проёмов, запас на подрезку</p>
+    </div>
+
     <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-            <div>
-                <h1 style="font-size:1.4rem;margin:0;">Расчёт площади объекта</h1>
-                <p style="color:var(--muted);font-size:.9rem;margin:4px 0 0;">Стены и пол по комнатам с вычетом проёмов</p>
+        <div class="reserve-line">
+            <label for="reserve">Общий запас на подрезку материала:</label>
+            <div class="reserve-control">
+                <input type="number" id="reserve" value="10" min="0" max="100" oninput="calculateAll()"> <b>%</b>
             </div>
-            <button type="button" class="btn btn-primary" onclick="addRoom()">+ Добавить комнату</button>
-        </div>
-        <div class="global-controls">
-            <label for="reserve">Общий запас на подрезку материала (%):</label>
-            <input type="number" id="reserve" value="10" min="0" max="100" oninput="calculateAll()">
         </div>
     </div>
 
     <div id="rooms-container"></div>
 
-    <div class="card summary-card">
-        <div class="summary-title">Итого по всем комнатам (<span id="total-rooms">0</span>)</div>
+    <div class="add-row no-print">
+        <button class="btn btn-primary" onclick="addRoom()">+ Добавить комнату</button>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-title">Итого по объекту (<span id="total-rooms">0</span> комн.)</div>
         <div class="sum-grid">
             <div class="sum-item">
                 <span>Общий периметр:</span>
                 <strong id="tot-perim">0 м</strong>
             </div>
             <div class="sum-item">
-                <span>Вычет проёмов (окна и двери):</span>
+                <span>Вычет проёмов:</span>
                 <strong id="tot-openings">0 м²</strong>
             </div>
             <div class="sum-item highlight">
                 <span>Чистая площадь стен:</span>
                 <strong id="tot-walls-net">0 м²</strong>
-                <span style="margin-top:4px;">С запасом: <b id="tot-walls-res">0 м²</b></span>
+                <span class="mini">С запасом <b id="reserve-label">10</b>%: <b id="tot-walls-res">0 м²</b></span>
             </div>
             <div class="sum-item highlight">
                 <span>Общая площадь пола:</span>
                 <strong id="tot-floor">0 м²</strong>
-                <span style="margin-top:4px;">С запасом: <b id="tot-floor-res">0 м²</b></span>
+                <span class="mini">С запасом: <b id="tot-floor-res">0 м²</b></span>
+            </div>
+            <div class="sum-item highlight">
+                <span>Площадь потолков:</span>
+                <strong id="tot-ceil">0 м²</strong>
+                <span class="mini">С запасом: <b id="tot-ceil-res">0 м²</b></span>
             </div>
         </div>
-        <div class="download-bar">
-            <button type="button" class="btn btn-success" onclick="downloadCSV()">Скачать таблицу (Excel / CSV)</button>
-            <button type="button" class="btn btn-outline" onclick="window.print()">Скачать PDF / Печать</button>
+        <div class="download-bar no-print">
+            <button class="btn btn-success" onclick="downloadCSV()">Скачать таблицу (CSV)</button>
+            <button class="btn btn-outline" onclick="window.print()">Печать / PDF</button>
         </div>
     </div>
-    
-<div class="footer">
-  К2 · Калькулятор площади — стены, пол, периметр и проёмы.<br>
-  Работает офлайн после первого открытия. Все данные остаются только на вашем устройстве.
 </div>
 
-</div>
+<footer class="site-footer">© 2026 Калькулятор площади К2 — бесплатный инструмент для ремонта</footer>
 <script>
-    let roomCounter = 0;
+    let roomId = 0;
 
-    const num = v => {
-        const x = parseFloat(String(v).replace(',', '.'));
-        return isFinite(x) && x > 0 ? x : 0;
-    };
+    function fmt(n, d = 2) {
+        return Number(n).toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
 
-    function addRoom() {
-        roomCounter++;
-        const html = `
-        <div class="card room-card" id="room-${roomCounter}">
+    function addRoom(name) {
+        roomId++;
+        const id = roomId;
+        const container = document.getElementById('rooms-container');
+        const div = document.createElement('div');
+        div.className = 'card room-card';
+        div.id = 'room-' + id;
+        div.innerHTML = `
             <div class="room-header">
-                <input type="text" class="room-name-input" value="Комната ${roomCounter}" oninput="calculateAll()">
-                <button type="button" class="btn-del-room" onclick="removeRoom('room-${roomCounter}')">Удалить</button>
+                <input type="text" class="room-name" value="${name || 'Комната ' + id}" oninput="calculateAll()">
+                <button class="btn-del-room" onclick="removeRoom(${id})" title="Удалить комнату">Удалить</button>
             </div>
-            <div class="grid-3">
-                <div class="field">
-                    <label>Длина (м)</label>
-                    <input type="number" step="0.01" min="0" class="r-len" oninput="calculateAll()" placeholder="4.5">
-                </div>
-                <div class="field">
-                    <label>Ширина (м)</label>
-                    <input type="number" step="0.01" min="0" class="r-wid" oninput="calculateAll()" placeholder="3.2">
-                </div>
-                <div class="field">
-                    <label>Высота (м)</label>
-                    <input type="number" step="0.01" min="0" class="r-h" value="2.7" oninput="calculateAll()">
+            <div class="grid-4">
+                <div class="field"><label>Длина, м</label><input type="number" step="0.01" min="0" class="r-len" oninput="calculateAll()" placeholder="5"></div>
+                <div class="field"><label>Ширина, м</label><input type="number" step="0.01" min="0" class="r-wid" oninput="calculateAll()" placeholder="4"></div>
+                <div class="field"><label>Высота, м</label><input type="number" step="0.01" min="0" class="r-hei" value="2.7" oninput="calculateAll()"></div>
+                <div class="field"><label>Считать потолок</label>
+                    <select class="r-ceil" onchange="calculateAll()">
+                        <option value="1">Да</option>
+                        <option value="0">Нет</option>
+                    </select>
                 </div>
             </div>
             <div class="openings-bar">
-                <span>Проёмы (окна / двери)</span>
-                <button type="button" class="btn-sm" onclick="addOpening('room-${roomCounter}')">+ Добавить проём</button>
+                <span>Проёмы (окна, двери, балконные блоки)</span>
+                <button class="btn-sm" onclick="addOpening(${id})">+ Проём</button>
             </div>
-            <div class="openings-container"></div>
+            <div class="openings-list" id="openings-${id}"></div>
             <div class="room-subtotal">
-                <span>Периметр: <strong class="s-perim">0 м</strong></span>
-                <span>Стены нетто: <strong class="s-walls">0 м²</strong></span>
-                <span>Пол: <strong class="s-floor">0 м²</strong></span>
-            </div>
-        </div>`;
-        document.getElementById('rooms-container').insertAdjacentHTML('beforeend', html);
+                <span>Периметр: <strong class="st-perim">0 м</strong></span>
+                <span>Стены (нетто): <strong class="st-walls">0 м²</strong></span>
+                <span>Потолок: <strong class="st-ceil">0 м²</strong></span>
+                <span>Пол: <strong class="st-floor">0 м²</strong></span>
+            </div>`;
+        container.appendChild(div);
         calculateAll();
     }
 
     function removeRoom(id) {
-        document.getElementById(id).remove();
+        const el = document.getElementById('room-' + id);
+        if (el) el.remove();
         calculateAll();
     }
 
     function addOpening(roomId) {
-        const container = document.querySelector(`#${roomId} .openings-container`);
+        const list = document.getElementById('openings-' + roomId);
         const row = document.createElement('div');
         row.className = 'opening-row';
         row.innerHTML = `
-            <select class="o-type" onchange="calculateAll()" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;">
-                ${OPENING_TYPES.map(t => `<option>${t}</option>`).join('')}
+            <select class="o-type" onchange="calculateAll()">
+                <option value="Окно">Окно</option>
+                <option value="Дверь">Дверь</option>
+                <option value="Балконный блок">Балконный блок</option>
             </select>
             <input type="number" step="0.01" min="0" class="o-w" placeholder="Ширина, м" oninput="calculateAll()">
             <input type="number" step="0.01" min="0" class="o-h" placeholder="Высота, м" oninput="calculateAll()">
-            <input type="number" min="0" step="1" class="o-c" placeholder="Кол-во" value="1" oninput="calculateAll()">
-            <button type="button" class="btn-del" onclick="this.parentElement.remove(); calculateAll();">×</button>
-        `;
-        container.appendChild(row);
+            <input type="number" min="0" step="1" class="o-q" value="1" placeholder="шт" oninput="calculateAll()">
+            <button class="btn-del" onclick="this.parentElement.remove(); calculateAll();" title="Удалить">×</button>`;
+        list.appendChild(row);
         calculateAll();
     }
 
-    function calculateAll() {
-        const reserve = Math.max(0, Math.min(100, num(document.getElementById('reserve').value) || 0));
-        const rooms = document.querySelectorAll('.room-card');
-        let totPerim = 0, totOpen = 0, totWallsNet = 0, totFloor = 0;
-        let csvRows = [['Комната', 'Периметр, м', 'Проёмы, м2', 'Стены нетто, м2', 'Пол, м2']];
-
-        rooms.forEach(room => {
-            const l = num(room.querySelector('.r-len').value);
-            const w = num(room.querySelector('.r-wid').value);
-            const h = num(room.querySelector('.r-h').value);
-            const name = room.querySelector('.room-name-input').value.trim() || 'Комната';
-
-            const perim = 2 * (l + w);
-            const floor = l * w;
-            const wallsGross = perim * h;
-
-            let openArea = 0;
-            room.querySelectorAll('.opening-row').forEach(o => {
-                const ow = num(o.querySelector('.o-w').value);
-                const oh = num(o.querySelector('.o-h').value);
-                const oc = Math.max(1, Math.round(num(o.querySelector('.o-c').value) || 1));
-                openArea += ow * oh * oc;
+    function getRooms() {
+        const rooms = [];
+        document.querySelectorAll('.room-card').forEach(card => {
+            const len = parseFloat(card.querySelector('.r-len').value) || 0;
+            const wid = parseFloat(card.querySelector('.r-wid').value) || 0;
+            const hei = parseFloat(card.querySelector('.r-hei').value) || 0;
+            const ceil = card.querySelector('.r-ceil').value === '1';
+            const name = card.querySelector('.room-name').value || 'Комната';
+            let openings = 0;
+            let openingsPerim = 0;
+            card.querySelectorAll('.opening-row').forEach(r => {
+                const w = parseFloat(r.querySelector('.o-w').value) || 0;
+                const h = parseFloat(r.querySelector('.o-h').value) || 0;
+                const q = parseInt(r.querySelector('.o-q').value) || 0;
+                openings += w * h * q;
+                openingsPerim += (w + h * 2) * q; // периметр одного проёма (для справки)
             });
-            openArea = Math.min(openArea, wallsGross);
+            const perim = 2 * (len + wid);
+            const wallsGross = perim * hei;
+            const wallsNet = Math.max(0, wallsGross - openings);
+            const floor = len * wid;
+            const ceilArea = ceil ? floor : 0;
+            rooms.push({ name, len, wid, hei, perim, openings, wallsGross, wallsNet, floor, ceilArea });
+        });
+        return rooms;
+    }
 
-            const wallsNet = wallsGross - openArea;
+    function calculateAll() {
+        const reserve = Math.max(0, parseFloat(document.getElementById('reserve').value) || 0);
+        const rooms = getRooms();
+        let tPerim = 0, tOpen = 0, tWallsNet = 0, tFloor = 0, tCeil = 0;
 
-            room.querySelector('.s-perim').textContent = perim.toFixed(2) + ' м';
-            room.querySelector('.s-walls').textContent = wallsNet.toFixed(2) + ' м²';
-            room.querySelector('.s-floor').textContent = floor.toFixed(2) + ' м²';
-
-            totPerim += perim;
-            totOpen += openArea;
-            totWallsNet += wallsNet;
-            totFloor += floor;
-            csvRows.push([name, perim.toFixed(2), openArea.toFixed(2), wallsNet.toFixed(2), floor.toFixed(2)]);
+        rooms.forEach((r, i) => {
+            const card = document.querySelectorAll('.room-card')[i];
+            card.querySelector('.st-perim').textContent = fmt(r.perim, 2) + ' м';
+            card.querySelector('.st-walls').textContent = fmt(r.wallsNet, 2) + ' м²';
+            card.querySelector('.st-ceil').textContent = fmt(r.ceilArea, 2) + ' м²';
+            card.querySelector('.st-floor').textContent = fmt(r.floor, 2) + ' м²';
+            tPerim += r.perim; tOpen += r.openings; tWallsNet += r.wallsNet; tFloor += r.floor; tCeil += r.ceilArea;
         });
 
-        document.getElementById('tot-rooms').textContent = rooms.length;
-        document.getElementById('tot-perim').textContent = totPerim.toFixed(2) + ' м';
-        document.getElementById('tot-openings').textContent = totOpen.toFixed(2) + ' м²';
-        document.getElementById('tot-walls-net').textContent = totWallsNet.toFixed(2) + ' м²';
-        document.getElementById('tot-walls-res').textContent = (totWallsNet * (1 + reserve / 100)).toFixed(2) + ' м²';
-        document.getElementById('tot-floor').textContent = totFloor.toFixed(2) + ' м²';
-        document.getElementById('tot-floor-res').textContent = (totFloor * (1 + reserve / 100)).toFixed(2) + ' м²';
-
-        const k = 1 + reserve / 100;
-        csvRows.push([]);
-        csvRows.push(['ИТОГО', totPerim.toFixed(2), totOpen.toFixed(2), (totWallsNet * k).toFixed(2), (totFloor * k).toFixed(2)]);
-        csvRows.push(['(с запасом ' + reserve + '%)']);
-        window._csvRows = csvRows;
+        document.getElementById('total-rooms').textContent = rooms.length;
+        document.getElementById('tot-perim').textContent = fmt(tPerim) + ' м';
+        document.getElementById('tot-openings').textContent = fmt(tOpen) + ' м²';
+        document.getElementById('tot-walls-net').textContent = fmt(tWallsNet) + ' м²';
+        document.getElementById('tot-walls-res').textContent = fmt(tWallsNet * (1 + reserve / 100)) + ' м²';
+        document.getElementById('tot-floor').textContent = fmt(tFloor) + ' м²';
+        document.getElementById('tot-floor-res').textContent = fmt(tFloor * (1 + reserve / 100)) + ' м²';
+        document.getElementById('tot-ceil').textContent = fmt(tCeil) + ' м²';
+        document.getElementById('tot-ceil-res').textContent = fmt(tCeil * (1 + reserve / 100)) + ' м²';
+        document.getElementById('reserve-label').textContent = reserve;
     }
 
     function downloadCSV() {
-        const rows = window._csvRows || [];
-        let csv = '\uFEFF';
-        rows.forEach(r => {
-            csv += r.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(';') + '\r\n';
+        const reserve = Math.max(0, parseFloat(document.getElementById('reserve').value) || 0);
+        const rooms = getRooms();
+        let csv = '\uFEFFКомната;Длина (м);Ширина (м);Высота (м);Периметр (м);Проёмы (м2);Стены нетто (м2);Потолок (м2);Пол (м2)\n';
+        rooms.forEach(r => {
+            csv += [r.name, r.len, r.wid, r.hei, r.perim.toFixed(2), r.openings.toFixed(2), r.wallsNet.toFixed(2), r.ceilArea.toFixed(2), r.floor.toFixed(2)].join(';') + '\n';
         });
+        csv += `ИТОГО;;;;${t_sum(rooms, 'perim')};${t_sum(rooms, 'openings')};${t_sum(rooms, 'wallsNet')};${t_sum(rooms, 'ceilArea')};${t_sum(rooms, 'floor')}\n`;
+        csv += `С запасом ${reserve}%;;;;"=";"=";${(t_sum(rooms, 'wallsNet') * (1 + reserve/100)).toFixed(2)};${(t_sum(rooms, 'ceilArea') * (1 + reserve/100)).toFixed(2)};${(t_sum(rooms, 'floor') * (1 + reserve/100)).toFixed(2)}\n`;
+
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'ploschad_k2.csv';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'K2_raschet_ploschadi.csv';
+        link.click();
     }
 
-    document.addEventListener('DOMContentLoaded', () => addRoom());
+    function t_sum(rooms, key) {
+        return rooms.reduce((s, r) => s + r[key], 0).toFixed(2);
+    }
+
+    // Стартовая комната-пример
+    addRoom('Комната 1');
 </script>
 </body>
 </html>
