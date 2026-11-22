@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор площади — К2</title>
+<meta name="description" content="Расчёт площади стен и пола по комнатам с вычетом проёмов и запасом на подрезку.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%232563eb'/><rect x='6' y='6' width='20' height='20' rx='3' fill='none' stroke='white' stroke-width='2.4'/><line x1='5' y1='27' x2='27' y2='5' stroke='%23f59e0b' stroke-width='2.6' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <svg width="30" height="30" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#fff"/><rect x="6" y="6" width="20" height="20" rx="3" fill="none" stroke="#2563eb" stroke-width="2.4"/><line x1="5" y1="27" x2="27" y2="5" stroke="#f59e0b" stroke-width="2.6" stroke-linecap="round"/><text x="17" y="14" font-size="8" font-weight="800" fill="#1d4ed8" font-family="system-ui">К2</text></svg>
+    К2 · Площадь
+  </div>
+  <nav>
+    <a href="index.html" class="">Главная</a>
+    <a href="calculator.html" class="active">Калькулятор</a>
+    <a href="guide.html" class="">Справка</a>
+  </nav>
+</header>
+
+<div class="container">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1 style="font-size:1.4rem;margin:0;">Расчёт площади объекта</h1>
+                <p style="color:var(--muted);font-size:.9rem;margin:4px 0 0;">Стены и пол по комнатам с вычетом проёмов</p>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="addRoom()">+ Добавить комнату</button>
+        </div>
+        <div class="global-controls">
+            <label for="reserve">Общий запас на подрезку материала (%):</label>
+            <input type="number" id="reserve" value="10" min="0" max="100" oninput="calculateAll()">
+        </div>
+    </div>
+
+    <div id="rooms-container"></div>
+
+    <div class="card summary-card">
+        <div class="summary-title">Итого по всем комнатам (<span id="total-rooms">0</span>)</div>
+        <div class="sum-grid">
+            <div class="sum-item">
+                <span>Общий периметр:</span>
+                <strong id="tot-perim">0 м</strong>
+            </div>
+            <div class="sum-item">
+                <span>Вычет проёмов (окна и двери):</span>
+                <strong id="tot-openings">0 м²</strong>
+            </div>
+            <div class="sum-item highlight">
+                <span>Чистая площадь стен:</span>
+                <strong id="tot-walls-net">0 м²</strong>
+                <span style="margin-top:4px;">С запасом: <b id="tot-walls-res">0 м²</b></span>
+            </div>
+            <div class="sum-item highlight">
+                <span>Общая площадь пола:</span>
+                <strong id="tot-floor">0 м²</strong>
+                <span style="margin-top:4px;">С запасом: <b id="tot-floor-res">0 м²</b></span>
+            </div>
+        </div>
+        <div class="download-bar">
+            <button type="button" class="btn btn-success" onclick="downloadCSV()">Скачать таблицу (Excel / CSV)</button>
+            <button type="button" class="btn btn-outline" onclick="window.print()">Скачать PDF / Печать</button>
+        </div>
+    </div>
+    
+<div class="footer">
+  К2 · Калькулятор площади — стены, пол, периметр и проёмы.<br>
+  Работает офлайн после первого открытия. Все данные остаются только на вашем устройстве.
+</div>
+
+</div>
+<script>
+    let roomCounter = 0;
+
+    const num = v => {
+        const x = parseFloat(String(v).replace(',', '.'));
+        return isFinite(x) && x > 0 ? x : 0;
+    };
+
+    function addRoom() {
+        roomCounter++;
+        const html = `
+        <div class="card room-card" id="room-${roomCounter}">
+            <div class="room-header">
+                <input type="text" class="room-name-input" value="Комната ${roomCounter}" oninput="calculateAll()">
+                <button type="button" class="btn-del-room" onclick="removeRoom('room-${roomCounter}')">Удалить</button>
+            </div>
+            <div class="grid-3">
+                <div class="field">
+                    <label>Длина (м)</label>
+                    <input type="number" step="0.01" min="0" class="r-len" oninput="calculateAll()" placeholder="4.5">
+                </div>
+                <div class="field">
+                    <label>Ширина (м)</label>
+                    <input type="number" step="0.01" min="0" class="r-wid" oninput="calculateAll()" placeholder="3.2">
+                </div>
+                <div class="field">
+                    <label>Высота (м)</label>
+                    <input type="number" step="0.01" min="0" class="r-h" value="2.7" oninput="calculateAll()">
+                </div>
+            </div>
+            <div class="openings-bar">
+                <span>Проёмы (окна / двери)</span>
+                <button type="button" class="btn-sm" onclick="addOpening('room-${roomCounter}')">+ Добавить проём</button>
+            </div>
+            <div class="openings-container"></div>
+            <div class="room-subtotal">
+                <span>Периметр: <strong class="s-perim">0 м</strong></span>
+                <span>Стены нетто: <strong class="s-walls">0 м²</strong></span>
+                <span>Пол: <strong class="s-floor">0 м²</strong></span>
+            </div>
+        </div>`;
+        document.getElementById('rooms-container').insertAdjacentHTML('beforeend', html);
+        calculateAll();
+    }
+
+    function removeRoom(id) {
+        document.getElementById(id).remove();
+        calculateAll();
+    }
+
+    function addOpening(roomId) {
+        const container = document.querySelector(`#${roomId} .openings-container`);
+        const row = document.createElement('div');
+        row.className = 'opening-row';
+        row.innerHTML = `
+            <select class="o-type" onchange="calculateAll()" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;">
+                ${OPENING_TYPES.map(t => `<option>${t}</option>`).join('')}
+            </select>
+            <input type="number" step="0.01" min="0" class="o-w" placeholder="Ширина, м" oninput="calculateAll()">
+            <input type="number" step="0.01" min="0" class="o-h" placeholder="Высота, м" oninput="calculateAll()">
+            <input type="number" min="0" step="1" class="o-c" placeholder="Кол-во" value="1" oninput="calculateAll()">
+            <button type="button" class="btn-del" onclick="this.parentElement.remove(); calculateAll();">×</button>
+        `;
+        container.appendChild(row);
+        calculateAll();
+    }
+
+    function calculateAll() {
+        const reserve = Math.max(0, Math.min(100, num(document.getElementById('reserve').value) || 0));
+        const rooms = document.querySelectorAll('.room-card');
+        let totPerim = 0, totOpen = 0, totWallsNet = 0, totFloor = 0;
+        let csvRows = [['Комната', 'Периметр, м', 'Проёмы, м2', 'Стены нетто, м2', 'Пол, м2']];
+
+        rooms.forEach(room => {
+            const l = num(room.querySelector('.r-len').value);
+            const w = num(room.querySelector('.r-wid').value);
+            const h = num(room.querySelector('.r-h').value);
+            const name = room.querySelector('.room-name-input').value.trim() || 'Комната';
+
+            const perim = 2 * (l + w);
+            const floor = l * w;
+            const wallsGross = perim * h;
+
+            let openArea = 0;
+            room.querySelectorAll('.opening-row').forEach(o => {
+                const ow = num(o.querySelector('.o-w').value);
+                const oh = num(o.querySelector('.o-h').value);
+                const oc = Math.max(1, Math.round(num(o.querySelector('.o-c').value) || 1));
+                openArea += ow * oh * oc;
+            });
+            openArea = Math.min(openArea, wallsGross);
+
+            const wallsNet = wallsGross - openArea;
+
+            room.querySelector('.s-perim').textContent = perim.toFixed(2) + ' м';
+            room.querySelector('.s-walls').textContent = wallsNet.toFixed(2) + ' м²';
+            room.querySelector('.s-floor').textContent = floor.toFixed(2) + ' м²';
+
+            totPerim += perim;
+            totOpen += openArea;
+            totWallsNet += wallsNet;
+            totFloor += floor;
+            csvRows.push([name, perim.toFixed(2), openArea.toFixed(2), wallsNet.toFixed(2), floor.toFixed(2)]);
+        });
+
+        document.getElementById('tot-rooms').textContent = rooms.length;
+        document.getElementById('tot-perim').textContent = totPerim.toFixed(2) + ' м';
+        document.getElementById('tot-openings').textContent = totOpen.toFixed(2) + ' м²';
+        document.getElementById('tot-walls-net').textContent = totWallsNet.toFixed(2) + ' м²';
+        document.getElementById('tot-walls-res').textContent = (totWallsNet * (1 + reserve / 100)).toFixed(2) + ' м²';
+        document.getElementById('tot-floor').textContent = totFloor.toFixed(2) + ' м²';
+        document.getElementById('tot-floor-res').textContent = (totFloor * (1 + reserve / 100)).toFixed(2) + ' м²';
+
+        const k = 1 + reserve / 100;
+        csvRows.push([]);
+        csvRows.push(['ИТОГО', totPerim.toFixed(2), totOpen.toFixed(2), (totWallsNet * k).toFixed(2), (totFloor * k).toFixed(2)]);
+        csvRows.push(['(с запасом ' + reserve + '%)']);
+        window._csvRows = csvRows;
+    }
+
+    function downloadCSV() {
+        const rows = window._csvRows || [];
+        let csv = '\uFEFF';
+        rows.forEach(r => {
+            csv += r.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(';') + '\r\n';
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'ploschad_k2.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => addRoom());
+</script>
+</body>
+</html>

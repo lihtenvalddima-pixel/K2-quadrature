@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Справка — К2</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%232563eb'/><rect x='6' y='6' width='20' height='20' rx='3' fill='none' stroke='white' stroke-width='2.4'/><line x1='5' y1='27' x2='27' y2='5' stroke='%23f59e0b' stroke-width='2.6' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <svg width="30" height="30" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#fff"/><rect x="6" y="6" width="20" height="20" rx="3" fill="none" stroke="#2563eb" stroke-width="2.4"/><line x1="5" y1="27" x2="27" y2="5" stroke="#f59e0b" stroke-width="2.6" stroke-linecap="round"/><text x="17" y="14" font-size="8" font-weight="800" fill="#1d4ed8" font-family="system-ui">К2</text></svg>
+    К2 · Площадь
+  </div>
+  <nav>
+    <a href="index.html" class="">Главная</a>
+    <a href="calculator.html" class="">Калькулятор</a>
+    <a href="guide.html" class="active">Справка</a>
+  </nav>
+</header>
+
+<div class="container">
+  <h1 class="section-title" style="margin-top:20px;">Как считаются площади</h1>
+  <p class="section-sub">Все формулы открыты — вы всегда можете проверить расчёт вручную.</p>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Стены комнаты</h3>
+    <p style="color:var(--muted);line-height:1.6;">Периметр умножаем на высоту потолков, затем вычитаем площадь всех проёмов (окна, двери, балконные блоки). Вычет не превышает площадь стен — защита от ошибок при вводе.</p>
+    <p><b>Стены нетто = 2 × (длина + ширина) × высота − площадь проёмов</b></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Пол</h3>
+    <p style="color:var(--muted);line-height:1.6;">Просто длина умножается на ширину комнаты. Проёмы на пол не влияют.</p>
+    <p><b>Пол = длина × ширина</b></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Периметр</h3>
+    <p style="color:var(--muted);line-height:1.6;">Сумма длин всех четырёх стен. Нужен для покупки плинтуса, потолочного багета и направляющих.</p>
+    <p><b>Периметр = 2 × (длина + ширина)</b></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Запас на подрезку</h3>
+    <p style="color:var(--muted);line-height:1.6;">Материалы режутся, ломаются и стыкуются, поэтому принято брать запас. Ориентиры: обои — 10%, плитка — 10–15%, ламинат — 5–7%, краска — без запаса (считается по расходу).</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Частые вопросы</h3>
+    <p style="color:var(--muted);line-height:1.6;"><b>Комнаты нестандартной формы?</b> Разбивайте на прямоугольники и добавляйте как отдельные комнаты — итог сложится сам.</p>
+    <p style="color:var(--muted);line-height:1.6;"><b>Данные сохраняются?</b> Нет, всё считается в браузере и исчезает при перезагрузке. Чтобы не потерять расчёт — скачайте CSV-таблицу.</p>
+    <p style="color:var(--muted);line-height:1.6;"><b>Двери в проёмах</b> считаются вместе с коробкой; если хотите точнее — уменьшите ширину на 10 см.</p>
+  </div>
+  
+<div class="footer">
+  К2 · Калькулятор площади — стены, пол, периметр и проёмы.<br>
+  Работает офлайн после первого открытия. Все данные остаются только на вашем устройстве.
+</div>
+
+</div>
+</body>
+</html>
